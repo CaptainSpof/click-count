@@ -10,7 +10,9 @@ public class Configuration {
     public final int redisConnectionTimeout;  //milliseconds
 
     public Configuration() {
-        redisHost = "redis";
+        // TODO: Use environment variable to configure redis endpoint
+        redisHost = "localhost";
+        // redisHost = "redis";
         redisPort = 6379;
         redisConnectionTimeout = 2000;
     }

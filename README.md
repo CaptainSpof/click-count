@@ -1,3 +1,3 @@
 # Click Count application
 
-> :warning: **WIPing**: CI/CDfication of this project is under process
+> :warning: **We be WIPing**: CI/CDfication of this project is under process

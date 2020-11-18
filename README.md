@@ -34,7 +34,7 @@ docker run --name redis --rm -p 6379:6379 redis
 then fire up the ~click-count~ container:
 
 ``` bash
-docker run --name click-count --rm --net=host click-count
+docker run --env REDIS_HOST=localhost --name click-count --rm --net=host click-count
 ```
 
 > **_NOTE:_**  Here, we share host network with the container, this is in order to quickly get access to redis. Setting up a proper shared network is recommended.

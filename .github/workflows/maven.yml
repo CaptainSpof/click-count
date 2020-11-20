@@ -1,0 +1,76 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Java CI with Maven
+
+# on:
+#   push:
+#     branches: [ feature/gh-actions ]
+#   pull_request:
+#     branches: [ develop ]
+
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set env
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+    - name: Test
+      run: |
+        echo $RELEASE_VERSION
+        echo ${{ env.RELEASE_VERSION }}
+
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Build with Maven
+      run: mvn clean package
+      
+    - name: Debug
+      run: ls -l
+      
+    - uses: docker/setup-buildx-action@v1
+      
+    - name: Docker Login
+      uses: docker/login-action@v1.6.0
+      with:
+        # Username used to log against the Docker registry
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        # Password or personal access token used to log against the Docker registry
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v2.1.0
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: captainspof/click-count:latest
+        
+    - name: Image digest
+      run: echo ${{ steps.docker_build.outputs.digest }}
+      
+    - name: Generate deployment package
+      run: zip -r deploy.zip Dockerrun.aws.json
+
+    - name: Deploy to EB
+      uses: einaregilsson/beanstalk-deploy@v14
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: click-count-testing
+        environment_name: ClickCountTesting-env
+        version_label: ${{ env.RELEASE_VERSION }}
+        region: eu-west-3
+        deployment_package: deploy.zip
+        use_existing_version_if_available: true

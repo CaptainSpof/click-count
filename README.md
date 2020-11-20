@@ -46,5 +46,11 @@ docker run --env REDIS_HOST=localhost --name click-count --rm --net=host click-c
 
 ## How to deploy ?
 
+In order to deploy a new version, simply create a Tag to the commit you want to deploy. Github Actions will take care of the rest.
 
-> :zzz: **Comming soon**
+> :zzz: **Comming soon** Better tag management, better environment management
+
+
+## How to manage the infrastructure ?
+
+> :zzz: **Comming soon** 

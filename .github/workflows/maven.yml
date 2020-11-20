@@ -73,3 +73,4 @@ jobs:
         version_label: ${{ env.RELEASE_VERSION }}
         region: eu-west-3
         deployment_package: deploy.zip
+        use_existing_version_if_available: true

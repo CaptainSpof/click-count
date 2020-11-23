@@ -3,13 +3,13 @@ This is where the infrastucture-as-code (IaC) for the `click-count` project live
 # Stacks
 
 This project is separated in three stacks
-- `tf-net` - The stack responsible to create everything related to network
+- `tf-shared` - The stack responsible to create everything shared between the stacks, main iam roles and security groups
 - `tf-db` - The stack responsible to create everything related to databases (i.e Elasticache redis)
 - `tf-app` - The stack responsible to create everything related to the applications (i.e elastic Beanstalk)
 
 # Workspaces
 
-This project uses terraform's workspaces to deploy to separate environments, namely `staging` and `production`.
+This project uses terraform's workspaces to deploy to separate environments, namely `shared`, `staging` and `production`.
 
 # Terraform States
 
@@ -19,6 +19,10 @@ Terraform states are saved using the s3 backend. A single bucket with all three 
 
 To deploy the infrastructure, you need to select a workspace for each stacks, navigate to the stack you want to deploy, then:
 
+for `shared`:
+``` bash
+terraform workspace select shared
+```
 for `staging`:
 ``` bash
 terraform workspace select staging
@@ -35,7 +39,7 @@ Here's the order:
 
 ### Creation
 
-1. `tg-net`
+1. `tg-shared`
 2. `tg-db`
 3. `tg-app`
 
@@ -45,7 +49,7 @@ For destructing your environment, the order is reversed:
 
 1. `tg-app`
 2. `tg-db`
-3. `tg-net`
+3. `tg-shared`
 
 ## Tips
 

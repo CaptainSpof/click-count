@@ -3,16 +3,9 @@
 
 name: Java CI with Maven
 
-# on:
-#   push:
-#     branches: [ feature/gh-actions ]
-#   pull_request:
-#     branches: [ develop ]
-
 on:
-  push:
-    tags:
-    - '*'
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -40,6 +33,9 @@ jobs:
       run: ls -l
       
     - uses: docker/setup-buildx-action@v1
+
+    - name: Edit image tag
+      run: sed -i 's/<TAG>/${{ env.RELEASE_VERSION }}/' Dockerrun.aws.json
       
     - name: Docker Login
       uses: docker/login-action@v1.6.0
@@ -55,21 +51,35 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: captainspof/click-count:latest
+        tags: captainspof/click-count:${{ env.RELEASE_VERSION }}
         
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
-      
+
     - name: Generate deployment package
       run: zip -r deploy.zip Dockerrun.aws.json
 
-    - name: Deploy to EB
+    - name: Deploy to EB staging
+      if: "github.event.release.prerelease"
       uses: einaregilsson/beanstalk-deploy@v14
       with:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         application_name: ${{ secrets.BEANSTALK_STAGING_APPLICATION_NAME }}
         environment_name: ${{ secrets.BEANSTALK_STAGING_ENVIRONMENT_NAME }}
+        version_label: ${{ env.RELEASE_VERSION }}
+        region: ${{ secrets.AWS_REGION }}
+        deployment_package: deploy.zip
+        use_existing_version_if_available: true
+
+    - name: Deploy to EB production
+      if: "!github.event.release.prerelease && github.ref == 'refs/heads/master'"
+      uses: einaregilsson/beanstalk-deploy@v14
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: ${{ secrets.BEANSTALK_PRODUCTION_APPLICATION_NAME }}
+        environment_name: ${{ secrets.BEANSTALK_PRODUCTION_ENVIRONMENT_NAME }}
         version_label: ${{ env.RELEASE_VERSION }}
         region: ${{ secrets.AWS_REGION }}
         deployment_package: deploy.zip

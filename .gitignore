@@ -1,3 +1,11 @@
 .idea/
 target/
 *.iml
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+# Terraform
+.terraform/
+# direnv
+.direnv/

@@ -11,22 +11,22 @@ terraform {
   }
 }
 
-data "aws_security_group" "sg-eb" {
+data "aws_security_group" "sg-allow-web-ssh-eb" {
   filter {
     name   = "tag:Env"
-    values = [var.env]
+    values = ["shared"]
   }
 
   filter {
     name   = "tag:Name"
-    values = ["sg-eb"]
+    values = ["sg-allow-web-ssh-eb"]
   }
 }
 
-data "aws_security_group" "sg-web-lb" {
+data "aws_security_group" "sg-allow-web-lb" {
   filter {
     name   = "tag:Env"
-    values = [var.env]
+    values = ["shared"]
   }
 
   filter {
@@ -35,31 +35,21 @@ data "aws_security_group" "sg-web-lb" {
   }
 }
 
-# data "aws_elasticache_cluster" "click_count" {
-#   tags = {
-#     Env = var.env
-#   }
-# }
-
-# data "terraform_remote_state" "elasticache" {
-#   backend = "remote"
-
-#   config = {
-#     organization = "hashicorp"
-#     workspaces = {
-#       name = "vpc-prod"
-#     }
-#   }
-# }
+data "aws_iam_instance_profile" "beanstalk_ec2" {
+  name = "beanstalk-ec2-user"
+}
 
 data "terraform_remote_state" "elasticache" {
   backend = "s3"
   config = {
     region = var.aws_region
+    # TODO: exoport to var
     bucket = "click-count-tfstate"
     key    = "env:/${var.env}/db/terraform.tfstate"
   }
 }
+
+
 
 
 # data "aws_vpc" "click_count" {
@@ -75,6 +65,10 @@ resource "aws_default_vpc" "default" {
   }
 }
 
+data "aws_subnet_ids" "default" {
+  vpc_id = aws_default_vpc.default.id
+}
+
 # data "aws_subnet_ids" "click_count" {
 #   vpc_id = data.aws_vpc.click_count.id
 #   tags = {
@@ -82,98 +76,6 @@ resource "aws_default_vpc" "default" {
 #   }
 # }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = aws_default_vpc.default.id
-}
-
-##
-## IAM - Role / Policy
-##
-
-resource "aws_iam_role" "beanstalk_ec2" {
-  # name               = "beanstalk-ec2-role"
-  name               = "beanstalk-ec2-user"
-  assume_role_policy = <<EOF
-{
-  "Version": "2008-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-  tags = {
-    Env         = var.env
-    Project     = var.project_name
-    Provisioner = "terraform"
-  }
-}
-
-resource "aws_iam_instance_profile" "beanstalk_ec2" {
-  name = "beanstalk-ec2-user"
-  role = aws_iam_role.beanstalk_ec2.name
-}
-
-resource "aws_iam_role" "beanstalk_service" {
-  name               = "beanstalk-service-role"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "elasticbeanstalk.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole",
-      "Condition": {
-        "StringEquals": {
-          "sts:ExternalId": "elasticbeanstalk"
-        }
-      }
-    }
-  ]
-}
-EOF
-  # tags               = local.tags
-
-  tags = {
-    Env         = var.env
-    Project     = var.project_name
-    Provisioner = "terraform"
-  }
-}
-
-resource "aws_iam_policy_attachment" "beanstalk_service" {
-  name       = "elastic-beanstalk-service"
-  roles      = [aws_iam_role.beanstalk_service.id]
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService"
-}
-
-resource "aws_iam_policy_attachment" "beanstalk_service_health" {
-  name       = "elastic-beanstalk-service-health"
-  roles      = [aws_iam_role.beanstalk_service.id]
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth"
-}
-
-resource "aws_iam_policy_attachment" "beanstalk_ec2_worker" {
-  name       = "elastic-beanstalk-ec2-worker"
-  roles      = [aws_iam_role.beanstalk_ec2.id]
-  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier"
-}
-
-resource "aws_iam_policy_attachment" "beanstalk_ec2_docker" {
-  name       = "elastic-beanstalk-ec2-docker"
-  roles      = [aws_iam_role.beanstalk_ec2.id]
-  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
-}
 
 ##
 ## Beanstalk
@@ -202,12 +104,6 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
   ## Environment
   ##
 
-  # setting {
-  #   namespace = "aws:elasticbeanstalk:environment"
-  #   name      = "LoadBalancerIsShared"
-  #   value     = "true"
-  # }
-
   setting {
     namespace = "aws:elasticbeanstalk:environment"
     name      = "LoadBalancerType"
@@ -227,23 +123,15 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
   setting {
     namespace = "aws:elbv2:loadbalancer"
     name      = "SecurityGroups"
-    value     = data.aws_security_group.sg-web-lb.id
-    # value     = data.aws_security_group.click_count-web-ssh.id
+    value     = data.aws_security_group.sg-allow-web-lb.id
   }
 
   setting {
     namespace = "aws:elbv2:loadbalancer"
     name      = "ManagedSecurityGroup"
-    value     = data.aws_security_group.sg-web-lb.id
-    # value     = data.aws_security_group.click_count-web-ssh.id
+    value     = data.aws_security_group.sg-allow-web-lb.id
   }
 
-
-  # setting {
-  #   namespace = "aws:elbv2:loadbalancer"
-  #   name      = "SharedLoadBalancer"
-  #   value     = data.terraform_remote_state.alb.outputs.alb_arn
-  # }
 
   ### Listener rule
 
@@ -257,27 +145,18 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
     namespace = "aws:ec2:vpc"
     name      = "VPCId"
     value     = aws_default_vpc.default.id
-    # value     = data.aws_vpc.click_count.id
   }
-
-  # setting {
-  #   namespace = "aws:ec2:vpc"
-  #   name      = "ELBScheme"
-  #   value     = "Internal"
-  # }
 
   setting {
     namespace = "aws:ec2:vpc"
     name      = "Subnets"
     value     = join(",", data.aws_subnet_ids.default.ids)
-    # value     = join(",", data.aws_subnet_ids.click_count.ids)
   }
 
   setting {
     namespace = "aws:ec2:vpc"
     name      = "ELBSubnets"
     value     = join(",", data.aws_subnet_ids.default.ids)
-    # value     = join(",", data.aws_subnet_ids.click_count.ids)
   }
 
   ##
@@ -293,20 +172,13 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "IamInstanceProfile"
-    value     = aws_iam_instance_profile.beanstalk_ec2.name
+    value     = data.aws_iam_instance_profile.beanstalk_ec2.name
   }
-
-  # setting {
-  #   namespace = "aws:autoscaling:launchconfiguration"
-  #   name      = "SSHSourceRestriction"
-  #   value     = "tcp,22,22,0.0.0.0/0"
-  # }
 
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "SecurityGroups"
-    value     = "${data.aws_security_group.sg-eb.id}"
-    # value = "${aws_default_security_group.default.id}"
+    value     = "${data.aws_security_group.sg-allow-web-ssh-eb.id}"
   }
 
   setting {

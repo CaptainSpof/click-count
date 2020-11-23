@@ -16,8 +16,6 @@ resource "aws_default_vpc" "default" {
   }
 }
 
-
-
 # data "aws_vpc" "click_count" {
 #   filter {
 #     name   = "tag:Env"
@@ -40,10 +38,10 @@ resource "aws_default_vpc" "default" {
 # }
 
 # TODO: use terraform_remote_state where possible
-data "aws_security_group" "sg-web-lb" {
+data "aws_security_group" "sg-allow-web-lb" {
   filter {
     name   = "tag:Env"
-    values = [var.env]
+    values = ["shared"]
   }
 
   filter {
@@ -52,17 +50,31 @@ data "aws_security_group" "sg-web-lb" {
   }
 }
 
-data "aws_security_group" "sg-eb" {
+data "aws_security_group" "sg-allow-web-ssh-eb" {
   filter {
     name   = "tag:Env"
-    values = [var.env]
+    values = ["shared"]
   }
 
   filter {
     name   = "tag:Name"
-    values = ["sg-eb"]
+    values = ["sg-allow-web-ssh-eb"]
   }
 }
+
+
+data "aws_security_group" "sg-allow-redis" {
+  filter {
+    name   = "tag:Env"
+    values = ["shared"]
+  }
+
+  filter {
+    name   = "tag:Name"
+    values = ["sg-allow-redis"]
+  }
+}
+
 # FIXME
 # data "aws_security_group" "default" {
 
@@ -72,71 +84,6 @@ data "aws_security_group" "sg-eb" {
 #   }
 # }
 
-resource "aws_security_group" "click_count_allow_redis" {
-  name        = "allow_redis"
-  description = "Allow Redis inbound traffic"
-  vpc_id      = aws_default_vpc.default.id
-
-  ingress {
-    description = "Redis from ${data.aws_security_group.sg-web-lb.name}"
-    from_port   = 6379
-    to_port     = 6379
-    protocol    = "tcp"
-    # security_groups = [data.aws_security_group.sg-web-lb.id]
-    security_groups = [data.aws_security_group.sg-eb.id]
-  }
-
-  ingress {
-    description = "All from VPC"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self        = true
-    # security_groups = [aws_default_vpc.default.id]
-  }
-
-  # ingress {
-  #   description     = "Redis from VPC"
-  #   from_port       = 6379
-  #   to_port         = 6379
-  #   protocol        = "tcp"
-  #   security_groups = [data.aws_security_group.click_count.id]
-  # }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "sg-allow-redis"
-    Env         = var.env
-    Provisioner = "terraform"
-  }
-}
-
-# resource "aws_elasticache_subnet_group" "Subnet" {
-#   name = "subnet"
-#   # subnet_ids = [data.aws_subnet.click_count.id]
-#   subnet_ids = data.aws_subnet_ids.click_count.ids
-# }
-
-# resource "aws_elasticache_cluster" "click_count" {
-#   # cluster_id           = var.project_name
-#   cluster_id           = "${var.project_name}-${var.stack}-${lookup(var.environment_name, var.env)}"
-#   engine               = "redis"
-#   node_type            = "cache.t2.micro"
-#   num_cache_nodes      = 1
-#   parameter_group_name = "default.redis6.x"
-#   engine_version       = "6.x"
-#   port                 = 6379
-#   security_group_ids   = [aws_security_group.click_count_allow_redis.id]
-#   # subnet_group_name    = "${aws_elasticache_subnet_group.Subnet.name}"
-# }
-
-
 
 resource "aws_elasticache_replication_group" "click_count" {
   replication_group_id          = "${var.project_name}-${var.stack}-${lookup(var.environment_name, var.env)}"
@@ -144,10 +91,7 @@ resource "aws_elasticache_replication_group" "click_count" {
   node_type                     = "cache.t2.micro"
   port                          = 6379
   parameter_group_name          = "default.redis6.x"
-  # FIXME
-  security_group_ids = [aws_security_group.click_count_allow_redis.id]
-  # security_group_ids = ["sg-df4c22b2", aws_security_group.click_count_allow_redis.id]
-  # security_group_ids = ["sg-df4c22b2"]
+  security_group_ids            = [data.aws_security_group.sg-allow-redis.id]
 
   cluster_mode {
     num_node_groups         = 1
@@ -157,5 +101,6 @@ resource "aws_elasticache_replication_group" "click_count" {
   tags = {
     Env         = var.env
     Provisioner = "terraform"
+    Project     = var.project_name
   }
 }

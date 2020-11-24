@@ -11,15 +11,15 @@ This project is separated in three stacks
 
 This project uses terraform's workspaces to deploy to separate environments, namely `staging` and `production`.
 
-A `shared` workspace also exists (only for the `tf-shared`) to holds shared resources between the environments.
+A `shared` workspace also exists (only for `tf-shared`) for holding shared resources between the environments.
 
 # Terraform States
 
-Terraform states are saved using the s3 backend. A single bucket with all three stacks separated by environment holds the infrastructure states.
+Terraform's states are saved using the s3 backend. A single bucket with all three stacks separated by environment holds the infrastructure states.
 
 # How to deploy ?
 
-To deploy the infrastructure, you need to select a workspace for each stacks, navigate to the stack you want to deploy, then:
+To deploy the infrastructure, you need to select a workspace for each stacks. Navigate to the stack you want to deploy, then:
 
 for `shared`:
 ``` bash
@@ -34,7 +34,7 @@ for `production`:
 terraform workspace select production
 ```
 
-Then, your regular terraform commands are available to deploy or destroy the infrastucture. See bellow for tips on how to deploy.
+Then, your regular terraform commands are available to interact with the infrastucture. See bellow for tips on how to deploy.
 
 ## What order ?
 
@@ -83,7 +83,7 @@ for production:
 ENV=production make apply
 ```
 
-### Destruction
+#### Destruction
 
 for staging:
 ``` bash

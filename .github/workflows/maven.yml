@@ -17,7 +17,8 @@ jobs:
 
     - name: Set env
       run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-    - name: Test
+
+    - name: Print env
       run: |
         echo $RELEASE_VERSION
         echo ${{ env.RELEASE_VERSION }}
@@ -60,7 +61,7 @@ jobs:
       run: zip -r deploy.zip Dockerrun.aws.json
 
     - name: Deploy to EB staging
-      if: "github.event.release.prerelease"
+      if: github.event.release.prerelease && github.ref == 'refs/heads/develop'
       uses: einaregilsson/beanstalk-deploy@v14
       with:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -73,7 +74,7 @@ jobs:
         use_existing_version_if_available: true
 
     - name: Deploy to EB production
-      if: "!github.event.release.prerelease && github.ref == 'refs/heads/master'"
+      if: (!github.event.release.prerelease) && github.ref == 'refs/heads/master'
       uses: einaregilsson/beanstalk-deploy@v14
       with:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}

@@ -43,18 +43,10 @@ variable "parameter_group_names" {
   }
 }
 
-variable "num_node_groups" {
+variable "number_cache_clusters" {
   type = map
   default = {
     staging    = 1
     production = 1
-  }
-}
-
-variable "replicas_per_node_groups" {
-  type = map
-  default = {
-    staging    = 0
-    production = 0
   }
 }

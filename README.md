@@ -4,7 +4,7 @@
 
 `click-count` is a mission critical app that allows to count on button click.
 
-It is a web application made in Java running in a Tomcat 7 application server.
+It is a Java web application, running in a Tomcat 7 application server.
 
 ## How to build ?
 
@@ -35,22 +35,34 @@ To run the project locally, first start a `redis` instance, running in port 6379
 docker run --name redis --rm -p 6379:6379 redis
 ```
 
-then fire up the `click-count` container:
+then, fire up the `click-count` container:
 
 ``` bash
 docker run --env REDIS_HOST=localhost --name click-count --rm --net=host click-count
 ```
 
-> **_NOTE:_**  Here, we share host network with the container, this is in order to quickly get access to redis. Setting up a proper shared network is recommended.
+alternatively, you can download a docker image from DockerHub:
 
+``` bash
+docker run --env REDIS_HOST=localhost --name click-count --rm --net=host captainspof/click-count
+```
+
+> **_NOTE:_**  Here, we share host network with the container, this is in order to quickly get access to redis. Setting up a proper, shared network is recommended.
+
+you should be able to reach the application at ~localhost:8000~.
 
 ## How to deploy ?
 
-In order to deploy a new version, simply create a Tag to the commit you want to deploy. Github Actions will take care of the rest.
+### Deploy to staging environment
 
-> :zzz: **Comming soon** Better tag management, better environment management
+In order to deploy a new version to staging environment, simply create a pre-release to the commit you want to deploy. Github Actions will take care of the rest.
 
+### Deploy to production environment
+
+Where you're satisfied with your version, merge it master. Then, create a release to the master branch, Github Actions will ship it to production for you.
+
+> **_NOTE:_**  Merging to master will require approbation from a pair.
 
 ## How to manage the infrastructure ?
 
-> :zzz: **Comming soon** 
+Terraform takes care of the infrastructure. To learn more, visit the README in the `infra` directory. [Here](./infra/README.md).

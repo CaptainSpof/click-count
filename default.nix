@@ -5,5 +5,6 @@ mkShell {
     # awscli2
     awsebcli
     terraform_0_13
+    cmake
   ];
 }

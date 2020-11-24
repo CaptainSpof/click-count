@@ -28,8 +28,6 @@ jobs:
         echo $GITHUB_ENV
         echo ${{ env.RELEASE_VERSION }}
         echo ${{ github.ref }}
-        echo ${{ github.head_ref }}
-        echo ${{ github }}
         echo ${{ github.event.release.target_commitish }}
 
 
@@ -71,7 +69,7 @@ jobs:
       run: zip -r deploy.zip Dockerrun.aws.json
 
     - name: Deploy to EB staging
-      if: github.event.release.prerelease && github.event.release.target_commitish == 'refs/heads/feature/gh-actions'
+      if: github.event.release.prerelease && github.event.release.target_commitish == 'feature/gh-actions'
       uses: einaregilsson/beanstalk-deploy@v14
       with:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -84,7 +82,7 @@ jobs:
         use_existing_version_if_available: true
 
     - name: Deploy to EB production
-      if: (!github.event.release.prerelease) && github.event.release.target_commitish == 'refs/heads/master'
+      if: (!github.event.release.prerelease) && github.event.release.target_commitish == 'master'
       uses: einaregilsson/beanstalk-deploy@v14
       with:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}

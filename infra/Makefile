@@ -1,4 +1,4 @@
-.PHONY: destroy apply plan
+.PHONY: destroy destroy-shared apply plan
 .ONESHELL:
 
 set-env:
@@ -36,9 +36,13 @@ destroy: set-env set-workspace
 	cd ../tf-db; \
 	echo "running destroy for tf-db in workspace: '${ENV}'"; \
 	terraform destroy -var env=${ENV}; \
-	cd ../tf-shared; \
-	echo "running destroy for tf-shared in workspace: 'shared'"; \
-	terraform destroy -var env=shared
+
+destroy-shared:
+	@cd tf-shared
+	@echo "selecting workspace 'shared' for tf-shared"
+	@terraform workspace select shared
+	@echo "running destroy for tf-shared in workspace: 'shared'"
+	@terraform destroy -var env=shared
 
 apply: set-env set-workspace
 	@cd tf-shared; \

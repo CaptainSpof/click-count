@@ -69,7 +69,7 @@ jobs:
       run: zip -r deploy.zip Dockerrun.aws.json
 
     - name: Deploy to EB staging
-      if: github.event.release.prerelease && github.event.release.target_commitish == 'feature/gh-actions'
+      if: github.event.release.prerelease
       uses: einaregilsson/beanstalk-deploy@v14
       with:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}

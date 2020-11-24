@@ -75,27 +75,17 @@ data "aws_security_group" "sg-allow-redis" {
   }
 }
 
-# FIXME
-# data "aws_security_group" "default" {
-
-#   filter {
-#     name   = "tag:Name"
-#     values = ["default"]
-#   }
-# }
-
-
 resource "aws_elasticache_replication_group" "click_count" {
-  replication_group_id          = "${var.project_name}-${var.stack}-${lookup(var.environment_name, var.env)}"
+  replication_group_id          = "${var.project_name}-${var.stack}-${var.env}"
   replication_group_description = "redis - click-count"
-  node_type                     = "cache.t2.micro"
+  node_type                     = lookup(var.node_types, var.env)
   port                          = 6379
-  parameter_group_name          = "default.redis6.x"
+  parameter_group_name          = lookup(var.parameter_group_names, var.env)
   security_group_ids            = [data.aws_security_group.sg-allow-redis.id]
 
   cluster_mode {
-    num_node_groups         = 1
-    replicas_per_node_group = 0
+    num_node_groups         = lookup(var.num_node_groups, var.env)
+    replicas_per_node_group = lookup(var.replicas_per_node_groups, var.env)
   }
 
   tags = {

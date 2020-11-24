@@ -51,6 +51,6 @@ apply: set-env set-workspace
 	cd ../tf-db; \
 	echo "running apply for tf-db in workspace: '${ENV}'"; \
 	terraform apply -var env=${ENV}; \
-	@cd tf-app; \
+	cd ../tf-app; \
 	echo "running apply for tf-app in workspace: '${ENV}'"; \
 	terraform apply -var env=${ENV}

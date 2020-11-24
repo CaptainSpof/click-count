@@ -3,17 +3,19 @@ This is where the infrastucture-as-code (IaC) for the `click-count` project live
 # Stacks
 
 This project is separated in three stacks
-- `tf-shared` - The stack responsible to create everything shared between the stacks, main iam roles and security groups
-- `tf-db` - The stack responsible to create everything related to databases (i.e Elasticache redis)
-- `tf-app` - The stack responsible to create everything related to the applications (i.e elastic Beanstalk)
+- `tf-shared` - The stack responsible for creating everything shared between the stacks, mainly IAM roles and security groups
+- `tf-db` - The stack responsible for creating everything related to databases (i.e Elasticache redis)
+- `tf-app` - The stack responsible for creating everything related to the applications (i.e elastic Beanstalk)
 
 # Workspaces
 
-This project uses terraform's workspaces to deploy to separate environments, namely `shared`, `staging` and `production`.
+This project uses terraform's workspaces to deploy to separate environments, namely `staging` and `production`.
+
+A `shared` workspace also exists (only for the `tf-shared`) to holds shared resources between the environments.
 
 # Terraform States
 
-Terraform states are saved using the s3 backend. A single bucket with all three stacks separated by environment hold the infrastructure states.
+Terraform states are saved using the s3 backend. A single bucket with all three stacks separated by environment holds the infrastructure states.
 
 # How to deploy ?
 
@@ -31,6 +33,8 @@ for `production`:
 ``` bash
 terraform workspace select production
 ```
+
+Then, your regular terraform commands are available to deploy or destroy the infrastucture. See bellow for tips on how to deploy.
 
 ## What order ?
 
@@ -51,10 +55,50 @@ For destructing your environment, the order is reversed:
 2. `tg-db`
 3. `tg-shared`
 
+> **_NOTE:_** Destroying can be done in parallel, resources will simply wait for their dependencies to be destroyed first, just be aware of the timeouts.
+
 ## Tips
 
 To run terraform commands using the selected workspace, run:
 
 ``` bash
 terraform <cmd> -var env=`terraform workspace show`
+```
+
+### Makefile
+
+Additionally a Makefile can allow you to quickly apply or destroy the stacks.
+
+To use it run:
+
+#### Creation
+
+for staging:
+``` bash
+ENV=staging make apply
+```
+
+for production:
+``` bash
+ENV=production make apply
+```
+
+### Destruction
+
+for staging:
+``` bash
+ENV=staging make destroy
+```
+
+for production:
+``` bash
+ENV=production make destroy
+```
+
+> **_NOTE:_** The destroy command won't destroy the tf-shared stack, as it could still be used by another environment
+
+To destroy the shared stack, run:
+
+``` bash
+make destroy-shared
 ```

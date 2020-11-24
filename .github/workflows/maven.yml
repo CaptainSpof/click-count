@@ -27,6 +27,9 @@ jobs:
         echo $CURRENT_BRANCH
         echo $GITHUB_ENV
         echo ${{ env.RELEASE_VERSION }}
+        echo ${{ github.ref }}
+        echo ${{ github.head_ref }}
+        echo ${{ github }}
 
 
     - name: Set up JDK 1.8

@@ -43,7 +43,7 @@ data "terraform_remote_state" "elasticache" {
   backend = "s3"
   config = {
     region = var.aws_region
-    # TODO: exoport to var
+    # TODO: export to var
     bucket = "click-count-tfstate"
     key    = "env:/${var.env}/db/terraform.tfstate"
   }
@@ -185,21 +185,18 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
     namespace = "aws:autoscaling:asg"
     name      = "Availability Zones"
     value     = var.asg_availability_zones
-    resource  = ""
   }
 
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MinSize"
     value     = var.asg_min_size
-    resource  = ""
   }
 
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MaxSize"
     value     = var.asg_max_size
-    resource  = ""
   }
 
   tags = {

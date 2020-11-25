@@ -50,8 +50,6 @@ data "terraform_remote_state" "elasticache" {
 }
 
 
-
-
 # data "aws_vpc" "click_count" {
 #   filter {
 #     name   = "tag:Env"
@@ -82,22 +80,16 @@ data "aws_subnet_ids" "default" {
 ##
 
 resource "aws_elastic_beanstalk_application" "click_count" {
-  name        = "${var.project_name}-${var.stack}-${var.env}-app"
+  name        = "${local.name}-app"
   description = ""
-  # tags        = local.tags
-
-  tags = {
-    Env         = var.env
-    Project     = var.project_name
-    Provisioner = "terraform"
-  }
+  tags        = local.tags
 }
 
 resource "aws_elastic_beanstalk_environment" "click_count" {
-  name                = "${var.project_name}-${var.stack}-${var.env}-env"
-  application         = aws_elastic_beanstalk_application.click_count.name
-  solution_stack_name = var.beanstalk_solution_stack_name
-  # tags                   = local.tags
+  name                   = "${local.name}-env"
+  application            = aws_elastic_beanstalk_application.click_count.name
+  solution_stack_name    = var.beanstalk_solution_stack_name
+  tags                   = local.tags
   wait_for_ready_timeout = "20m"
 
   ##
@@ -178,7 +170,7 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "SecurityGroups"
-    value     = "${data.aws_security_group.sg-allow-web-ssh-eb.id}"
+    value     = data.aws_security_group.sg-allow-web-ssh-eb.id
   }
 
   setting {
@@ -199,22 +191,16 @@ resource "aws_elastic_beanstalk_environment" "click_count" {
     value     = var.asg_max_size
   }
 
-  tags = {
-    Env         = var.env
-    Project     = var.project_name
-    Provisioner = "terraform"
+  setting {
+    namespace = "aws:elasticbeanstalk:cloudwatch:logs"
+    name      = "StreamLogs"
+    value     = "true"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:cloudwatch:logs:health"
+    name      = "HealthStreamingEnabled"
+    value     = "true"
   }
 
 }
-
-# resource "aws_default_security_group" "default" {
-#   vpc_id = aws_default_vpc.default.id
-
-#   ingress {
-#     description     = "Redis from ${data.aws_security_group.sg-eb.name}"
-#     from_port       = 6379
-#     to_port         = 6379
-#     protocol        = "tcp"
-#     security_groups = [data.aws_security_group.sg-eb.id]
-#   }
-# }

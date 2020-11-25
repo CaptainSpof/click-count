@@ -48,7 +48,7 @@ resource "aws_default_vpc" "default" {
 # }
 
 resource "aws_security_group" "sg-allow-web-lb" {
-  name        = "${var.project_name}-${var.stack}-shared-web-ssh-lb"
+  name        = "${local.short_name}-web-lb"
   description = "Allow Web inbound traffic"
   vpc_id      = aws_default_vpc.default.id
 
@@ -67,23 +67,24 @@ resource "aws_security_group" "sg-allow-web-lb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name     = "sg-allow-web-lb"
-    Env      = "shared"
-    Provider = "terraform"
-  }
+  tags = merge(
+    local.tags,
+    {
+      Name = "sg-allow-web-lb"
+    },
+  )
 }
 
 resource "aws_security_group" "sg-allow-web-ssh-eb" {
-  name        = "${var.project_name}-${var.stack}-shared-web-ssh"
+  name        = "${local.short_name}-web-ssh-eb"
   description = "Allow Web and SSH inbound traffic"
   vpc_id      = aws_default_vpc.default.id
 
   ingress {
-    description = "Web from lb"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    description     = "Web from lb"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
     security_groups = [aws_security_group.sg-allow-web-lb.id]
   }
 
@@ -102,15 +103,18 @@ resource "aws_security_group" "sg-allow-web-ssh-eb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name     = "sg-allow-web-ssh-eb"
-    Env      = "shared"
-    Provider = "terraform"
-  }
+  tags = merge(
+    local.tags,
+    {
+      Name = "sg-allow-web-ssh-eb"
+    },
+  )
 }
 
 resource "aws_security_group" "sg-allow-redis" {
-  name        = "allow_redis"
+  name = "${local.short_name}-allow-redis"
+  # name = "${local.name}-allow-redis"
+  # name        = "allow_redis"
   description = "Allow Redis inbound traffic"
   vpc_id      = aws_default_vpc.default.id
 
@@ -137,11 +141,13 @@ resource "aws_security_group" "sg-allow-redis" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name        = "sg-allow-redis"
-    Env         = var.env
-    Provisioner = "terraform"
-  }
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "sg-allow-redis"
+    },
+  )
 }
 
 
@@ -150,7 +156,6 @@ resource "aws_security_group" "sg-allow-redis" {
 ##
 
 resource "aws_iam_role" "beanstalk_ec2" {
-  # name               = "beanstalk-ec2-role"
   name               = "beanstalk-ec2-user"
   assume_role_policy = <<EOF
 {
@@ -167,11 +172,7 @@ resource "aws_iam_role" "beanstalk_ec2" {
   ]
 }
 EOF
-  tags = {
-    Env         = "shared"
-    Project     = var.project_name
-    Provisioner = "terraform"
-  }
+  tags               = local.tags
 }
 
 resource "aws_iam_instance_profile" "beanstalk_ec2" {
@@ -201,13 +202,8 @@ resource "aws_iam_role" "beanstalk_service" {
   ]
 }
 EOF
-  # tags               = local.tags
+  tags               = local.tags
 
-  tags = {
-    Env         = "shared"
-    Project     = var.project_name
-    Provisioner = "terraform"
-  }
 }
 
 resource "aws_iam_policy_attachment" "beanstalk_service" {

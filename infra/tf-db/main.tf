@@ -76,17 +76,12 @@ data "aws_security_group" "sg-allow-redis" {
 }
 
 resource "aws_elasticache_replication_group" "click_count" {
-  replication_group_id          = "${var.project_name}-${var.stack}-${var.env}"
+  replication_group_id          = local.name
   replication_group_description = "redis - click-count"
   node_type                     = lookup(var.node_types, var.env)
   port                          = 6379
   parameter_group_name          = lookup(var.parameter_group_names, var.env)
   security_group_ids            = [data.aws_security_group.sg-allow-redis.id]
   number_cache_clusters         = lookup(var.number_cache_clusters, var.env)
-
-  tags = {
-    Env         = var.env
-    Provisioner = "terraform"
-    Project     = var.project_name
-  }
+  tags                          = local.tags
 }

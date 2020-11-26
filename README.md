@@ -1,7 +1,5 @@
 # Click Count application
 
-> :warning: **We be WIPing**: CI/CDfication of this project is under process
-
 `click-count` is a mission critical app that allows to count on button click.
 
 It is a Java web application, running in a Tomcat 7 application server.

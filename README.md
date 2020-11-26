@@ -6,6 +6,8 @@
 
 It is a Java web application, running in a Tomcat 7 application server.
 
+Take a look at this project [technical stacks](./infra/TECHNICAL_STACK.md).
+
 ## How to build ?
 
 ### Nix
